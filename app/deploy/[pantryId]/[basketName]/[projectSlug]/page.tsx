@@ -182,24 +182,34 @@ export default function DeployPage() {
     }
 
     const sparrowLabel = `
-<div id="sparrow-label" style="
+<a href="https://sparrow-codex.vercel.app" target="_blank" rel="noopener noreferrer" id="sparrow-link" style="
   position: fixed !important;
   bottom: 16px !important;
   right: 16px !important;
-  background: rgba(0, 0, 0, 0.9) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 6px !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 12px !important;
   z-index: 999999 !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-  pointer-events: none !important;
+  text-decoration: none;
 ">
-  Made by <strong>Sparrow</strong>
-</div>`
+  <div id="sparrow-label" style="
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 12px !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    transition: transform 0.2s ease;
+  ">
+    Made by <strong>Sparrow</strong>
+  </div>
+</a>
+<style>
+  #sparrow-link:hover #sparrow-label {
+    transform: scale(1.05);
+  }
+</style>
+`
 
     if (html.includes("</body>")) {
       html = html.replace("</body>", `${sparrowLabel}\n</body>`)
