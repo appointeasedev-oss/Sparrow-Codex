@@ -6,7 +6,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Sparrow AI - Code Generation Platform",
-  description: "AI-powered code generation platform inspired by bolt.new",
+  description: "AI-powered code generation platform by ARAS Developer",
   generator: "Sparrow AI",
 }
 
