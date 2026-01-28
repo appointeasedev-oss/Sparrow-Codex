@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   Send, Plus, MessageSquare, Sparkles, Loader2, X, 
   ImageIcon, CheckCircle2, Circle, Terminal, FileCode, FolderTree 
