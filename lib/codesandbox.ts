@@ -1,3 +1,4 @@
+// @ts-ignore
 import { getParameters } from "codesandbox/lib/api/define"
 
 export interface SandboxFile {

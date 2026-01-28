@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { 
   File, FileText, Globe, Palette, Settings, Copy, Download, 
-  Trash2, Edit3, Plus, Save, X, Folder, ChevronRight, ChevronDown 
+  Trash2, Edit3, Plus, Save, X, Folder, ChevronRight, ChevronDown,
+  Menu, ArrowLeft
 } from "lucide-react"
 import { Code } from "lucide-react"
 import type { ProjectFile } from "./workspace-area"
@@ -35,12 +36,17 @@ export function CodeEditor({
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["folder_src"]))
+  const [showMobileExplorer, setShowMobileExplorer] = useState(true)
 
   const activeFile = files.find((f) => f.id === activeFileId)
 
   useEffect(() => {
     if (activeFile) {
       setEditorContent(activeFile.content)
+      // On mobile, hide explorer when a file is selected
+      if (window.innerWidth < 768) {
+        setShowMobileExplorer(false)
+      }
     }
   }, [activeFile])
 
@@ -77,7 +83,7 @@ export function CodeEditor({
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className={`group flex items-center space-x-2 p-1.5 rounded cursor-pointer transition-colors ${
+            className={`group flex items-center space-x-2 p-2 md:p-1.5 rounded cursor-pointer transition-colors ${
               isSelected ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
             }`}
             style={{ paddingLeft: `${level * 12 + 8}px` }}
@@ -105,7 +111,7 @@ export function CodeEditor({
               <Input
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
-                className="text-xs bg-gray-900 border-gray-700 h-6 py-0 px-1 focus-visible:ring-1"
+                className="text-xs bg-gray-900 border-gray-700 h-7 md:h-6 py-0 px-1 focus-visible:ring-1"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     onFileRename(file.id, editingName)
@@ -125,7 +131,7 @@ export function CodeEditor({
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  className="h-6 w-6 p-0" 
+                  className="h-7 w-7 md:h-6 md:w-6 p-0" 
                   onClick={(e) => {
                     e.stopPropagation()
                     setEditingFileId(file.id)
@@ -137,7 +143,7 @@ export function CodeEditor({
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+                  className="h-7 w-7 md:h-6 md:w-6 p-0 text-red-400 hover:text-red-300"
                   onClick={(e) => {
                     e.stopPropagation()
                     onFileDelete(file.id)
@@ -174,16 +180,25 @@ export function CodeEditor({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full h-full bg-gray-950 rounded-lg border border-gray-800 flex overflow-hidden"
+      className="w-full h-full bg-gray-950 rounded-lg border border-gray-800 flex overflow-hidden relative"
     >
       {/* File Explorer Sidebar */}
-      <div className="w-64 border-r border-gray-800 flex flex-col bg-gray-900/30">
+      <div className={`
+        ${showMobileExplorer ? 'flex' : 'hidden md:flex'} 
+        absolute md:relative z-20 inset-0 md:inset-auto w-full md:w-64 
+        border-r border-gray-800 flex-col bg-gray-950 md:bg-gray-900/30
+      `}>
         <div className="p-3 border-b border-gray-800 flex items-center justify-between bg-gray-900/50">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Explorer</h3>
           <div className="flex space-x-1">
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setIsCreatingFile(true)}>
-              <Plus className="w-3.5 h-3.5" />
+            <Button size="sm" variant="ghost" className="h-8 w-8 md:h-6 md:w-6 p-0" onClick={() => setIsCreatingFile(true)}>
+              <Plus className="w-4 h-4 md:w-3.5 md:h-3.5" />
             </Button>
+            {!showMobileExplorer && (
+              <Button size="sm" variant="ghost" className="md:hidden h-8 w-8 p-0" onClick={() => setShowMobileExplorer(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -195,23 +210,31 @@ export function CodeEditor({
       </div>
 
       {/* Editor Area */}
-      <div className="flex-1 flex flex-col bg-black">
+      <div className={`flex-1 flex flex-col bg-black ${showMobileExplorer ? 'hidden md:flex' : 'flex'}`}>
         {activeFile ? (
           <>
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800 bg-gray-900/20">
-              <div className="flex items-center space-x-2">
-                {getFileIcon(activeFile.name)}
-                <span className="text-sm text-gray-300 font-medium">{activeFile.path}</span>
-              </div>
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b border-gray-800 bg-gray-900/20">
+              <div className="flex items-center space-x-2 overflow-hidden">
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  className="h-7 px-2 text-gray-400 hover:text-white"
+                  className="md:hidden h-8 w-8 p-0 text-gray-400"
+                  onClick={() => setShowMobileExplorer(true)}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                {getFileIcon(activeFile.name)}
+                <span className="text-xs md:text-sm text-gray-300 font-medium truncate">{activeFile.path}</span>
+              </div>
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-8 px-2 text-gray-400 hover:text-white"
                   onClick={() => navigator.clipboard.writeText(activeFile.content)}
                 >
-                  <Copy className="w-3.5 h-3.5 mr-1.5" />
-                  <span className="text-xs">Copy</span>
+                  <Copy className="w-3.5 h-3.5 md:mr-1.5" />
+                  <span className="hidden md:inline text-xs">Copy</span>
                 </Button>
               </div>
             </div>
@@ -219,16 +242,23 @@ export function CodeEditor({
               <textarea
                 value={editorContent}
                 onChange={(e) => handleContentChange(e.target.value)}
-                className="absolute inset-0 w-full h-full bg-transparent text-gray-300 font-mono text-sm p-6 resize-none focus:outline-none"
+                className="absolute inset-0 w-full h-full bg-transparent text-gray-300 font-mono text-xs md:text-sm p-4 md:p-6 resize-none focus:outline-none"
                 spellCheck={false}
               />
             </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-600">
-            <div className="text-center">
+            <div className="text-center p-4">
               <Code className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm">Select a file to view its content</p>
+              <p className="text-sm mb-4">Select a file to view its content</p>
+              <Button 
+                variant="outline" 
+                className="md:hidden border-gray-800 text-gray-400"
+                onClick={() => setShowMobileExplorer(true)}
+              >
+                Open Explorer
+              </Button>
             </div>
           </div>
         )}
