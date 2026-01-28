@@ -1,11 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { File, FileText, Globe, Palette, Settings, Copy, Download, Trash2, Edit3, Plus, Save, X } from "lucide-react"
+import { 
+  File, FileText, Globe, Palette, Settings, Copy, Download, 
+  Trash2, Edit3, Plus, Save, X, Folder, ChevronRight, ChevronDown 
+} from "lucide-react"
 import { Code } from "lucide-react"
 import type { ProjectFile } from "./workspace-area"
 
@@ -31,6 +34,7 @@ export function CodeEditor({
   const [editingName, setEditingName] = useState("")
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["folder_src"]))
 
   const activeFile = files.find((f) => f.id === activeFileId)
 
@@ -47,271 +51,186 @@ export function CodeEditor({
     }
   }
 
-  const startRename = (file: ProjectFile) => {
-    setEditingFileId(file.id)
-    setEditingName(file.name)
-  }
-
-  const confirmRename = () => {
-    if (editingFileId && editingName.trim()) {
-      onFileRename(editingFileId, editingName.trim())
+  const toggleFolder = (folderId: string) => {
+    const newExpanded = new Set(expandedFolders)
+    if (newExpanded.has(folderId)) {
+      newExpanded.delete(folderId)
+    } else {
+      newExpanded.add(folderId)
     }
-    setEditingFileId(null)
-    setEditingName("")
+    setExpandedFolders(newExpanded)
   }
 
-  const cancelRename = () => {
-    setEditingFileId(null)
-    setEditingName("")
-  }
+  const renderFileTree = (parentId: string | null = null, level = 0) => {
+    const children = files.filter(f => f.parentId === parentId)
+      .sort((a, b) => {
+        if (a.type !== b.type) return a.type === "folder" ? -1 : 1
+        return a.name.localeCompare(b.name)
+      })
 
-  const createNewFile = () => {
-    if (newFileName.trim()) {
-      const fileId = newFileName.replace(/[^a-zA-Z0-9]/g, "_")
-      const language = getLanguageFromFilename(newFileName)
+    return children.map(file => {
+      const isExpanded = expandedFolders.has(file.id)
+      const isSelected = activeFileId === file.id
 
-      // Trigger file creation through the parent component
-      window.dispatchEvent(
-        new CustomEvent("codeGenerated", {
-          detail: {
-            code: `// New ${language} file\n`,
-            language,
-            filename: newFileName.trim(),
-          },
-        }),
+      return (
+        <div key={file.id}>
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className={`group flex items-center space-x-2 p-1.5 rounded cursor-pointer transition-colors ${
+              isSelected ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
+            }`}
+            style={{ paddingLeft: `${level * 12 + 8}px` }}
+            onClick={() => {
+              if (file.type === "folder") {
+                toggleFolder(file.id)
+              } else {
+                onFileSelect(file.id)
+              }
+            }}
+          >
+            {file.type === "folder" ? (
+              isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />
+            ) : (
+              <div className="w-3.5" />
+            )}
+            
+            {file.type === "folder" ? (
+              <Folder className={`w-4 h-4 ${isExpanded ? "text-blue-400" : "text-blue-500"}`} />
+            ) : (
+              getFileIcon(file.name)
+            )}
+
+            {editingFileId === file.id ? (
+              <Input
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                className="text-xs bg-gray-900 border-gray-700 h-6 py-0 px-1 focus-visible:ring-1"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onFileRename(file.id, editingName)
+                    setEditingFileId(null)
+                  }
+                  if (e.key === "Escape") setEditingFileId(null)
+                }}
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span className="truncate text-sm flex-1">{file.name}</span>
+            )}
+
+            {!editingFileId && (
+              <div className="opacity-0 group-hover:opacity-100 flex items-center">
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-6 w-6 p-0" 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setEditingFileId(file.id)
+                    setEditingName(file.name)
+                  }}
+                >
+                  <Edit3 className="w-3 h-3" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onFileDelete(file.id)
+                  }}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+          </motion.div>
+          {file.type === "folder" && isExpanded && (
+            <div>{renderFileTree(file.id, level + 1)}</div>
+          )}
+        </div>
       )
-    }
-    setIsCreatingFile(false)
-    setNewFileName("")
-  }
-
-  const getLanguageFromFilename = (filename: string): string => {
-    const ext = filename.split(".").pop()?.toLowerCase()
-    const languageMap: Record<string, string> = {
-      html: "html",
-      css: "css",
-      js: "javascript",
-      jsx: "jsx",
-      ts: "typescript",
-      tsx: "tsx",
-      json: "json",
-      py: "python",
-      java: "java",
-      cpp: "cpp",
-      c: "c",
-    }
-    return languageMap[ext || ""] || "text"
+    })
   }
 
   const getFileIcon = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase()
     switch (ext) {
-      case "html":
-        return <Globe className="w-4 h-4 text-orange-400" />
-      case "css":
-        return <Palette className="w-4 h-4 text-blue-400" />
+      case "html": return <Globe className="w-4 h-4 text-orange-400" />
+      case "css": return <Palette className="w-4 h-4 text-blue-400" />
       case "js":
-      case "jsx":
-        return <FileText className="w-4 h-4 text-yellow-400" />
+      case "jsx": return <FileText className="w-4 h-4 text-yellow-400" />
       case "ts":
-      case "tsx":
-        return <FileText className="w-4 h-4 text-blue-500" />
-      case "json":
-        return <Settings className="w-4 h-4 text-green-400" />
-      default:
-        return <File className="w-4 h-4 text-gray-400" />
+      case "tsx": return <FileText className="w-4 h-4 text-blue-500" />
+      case "json": return <Settings className="w-4 h-4 text-green-400" />
+      default: return <File className="w-4 h-4 text-gray-400" />
     }
-  }
-
-  const copyToClipboard = () => {
-    if (activeFile) {
-      navigator.clipboard.writeText(activeFile.content)
-    }
-  }
-
-  const downloadFile = () => {
-    if (activeFile) {
-      const blob = new Blob([activeFile.content], { type: "text/plain" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = activeFile.name
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    }
-  }
-
-  if (files.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="w-full h-full bg-gray-900 rounded-lg border border-gray-800 flex items-center justify-center"
-      >
-        <div className="text-center text-gray-500">
-          <Code className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p className="text-lg">No code generated yet</p>
-          <p className="text-sm">Ask Sparrow to create some code for you</p>
-          <Button
-            onClick={() => setIsCreatingFile(true)}
-            className="mt-4 bg-white text-black hover:bg-gray-200"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create File
-          </Button>
-        </div>
-      </motion.div>
-    )
   }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full h-full bg-gray-900 rounded-lg border border-gray-800 flex"
+      className="w-full h-full bg-gray-950 rounded-lg border border-gray-800 flex overflow-hidden"
     >
-      {/* File Tabs */}
-      <div className="w-64 border-r border-gray-700 flex flex-col">
-        <div className="p-3 border-b border-gray-700 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-white">Files</h3>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setIsCreatingFile(true)}
-            className="text-gray-400 hover:text-white p-1"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
+      {/* File Explorer Sidebar */}
+      <div className="w-64 border-r border-gray-800 flex flex-col bg-gray-900/30">
+        <div className="p-3 border-b border-gray-800 flex items-center justify-between bg-gray-900/50">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Explorer</h3>
+          <div className="flex space-x-1">
+            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setIsCreatingFile(true)}>
+              <Plus className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
 
-        {/* New File Creation */}
-        {isCreatingFile && (
-          <div className="p-2 border-b border-gray-700">
-            <div className="flex items-center space-x-2">
-              <Input
-                value={newFileName}
-                onChange={(e) => setNewFileName(e.target.value)}
-                placeholder="filename.ext"
-                className="text-xs bg-gray-800 border-gray-600"
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") createNewFile()
-                  if (e.key === "Escape") {
-                    setIsCreatingFile(false)
-                    setNewFileName("")
-                  }
-                }}
-                autoFocus
-              />
-              <Button size="sm" onClick={createNewFile} className="p-1">
-                <Save className="w-3 h-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setIsCreatingFile(false)
-                  setNewFileName("")
-                }}
-                className="p-1"
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-        )}
-
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {files.map((file) => (
-              <motion.div
-                key={file.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className={`group flex items-center space-x-2 p-2 rounded transition-colors ${
-                  activeFileId === file.id
-                    ? "bg-gray-700 text-white"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                }`}
-              >
-                {editingFileId === file.id ? (
-                  <div className="flex items-center space-x-1 flex-1">
-                    <Input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      className="text-xs bg-gray-800 border-gray-600 h-6"
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") confirmRename()
-                        if (e.key === "Escape") cancelRename()
-                      }}
-                      onBlur={confirmRename}
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => onFileSelect(file.id)}
-                      className="flex items-center space-x-2 flex-1 text-left"
-                    >
-                      {getFileIcon(file.name)}
-                      <span className="truncate text-sm">{file.name}</span>
-                    </button>
-                    <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1">
-                      <Button size="sm" variant="ghost" onClick={() => startRename(file)} className="p-1 h-6 w-6">
-                        <Edit3 className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => onFileDelete(file.id)}
-                        className="p-1 h-6 w-6 text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            ))}
+          <div className="py-2">
+            {renderFileTree(null)}
           </div>
         </ScrollArea>
       </div>
 
-      {/* Code Editor */}
-      <div className="flex-1 flex flex-col">
-        {activeFile && (
+      {/* Editor Area */}
+      <div className="flex-1 flex flex-col bg-black">
+        {activeFile ? (
           <>
-            {/* Editor Header */}
-            <div className="flex items-center justify-between p-3 border-b border-gray-700">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800 bg-gray-900/20">
               <div className="flex items-center space-x-2">
                 {getFileIcon(activeFile.name)}
-                <span className="text-white font-medium">{activeFile.name}</span>
-                <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">{activeFile.language}</span>
+                <span className="text-sm text-gray-300 font-medium">{activeFile.path}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Button size="sm" variant="ghost" onClick={copyToClipboard} className="text-gray-400 hover:text-white">
-                  <Copy className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={downloadFile} className="text-gray-400 hover:text-white">
-                  <Download className="w-4 h-4" />
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-7 px-2 text-gray-400 hover:text-white"
+                  onClick={() => navigator.clipboard.writeText(activeFile.content)}
+                >
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="text-xs">Copy</span>
                 </Button>
               </div>
             </div>
-
-            {/* Editor Content */}
-            <div className="flex-1 p-4">
+            <div className="flex-1 relative">
               <textarea
                 value={editorContent}
                 onChange={(e) => handleContentChange(e.target.value)}
-                className="w-full h-full bg-black text-white font-mono text-sm p-4 rounded border border-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-20"
-                placeholder="Your code will appear here..."
+                className="absolute inset-0 w-full h-full bg-transparent text-gray-300 font-mono text-sm p-6 resize-none focus:outline-none"
                 spellCheck={false}
               />
             </div>
           </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-600">
+            <div className="text-center">
+              <Code className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Select a file to view its content</p>
+            </div>
+          </div>
         )}
       </div>
     </motion.div>

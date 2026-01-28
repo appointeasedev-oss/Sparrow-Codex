@@ -38,7 +38,7 @@ export function MainInterface() {
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="hidden md:flex w-80 border-r border-gray-800 flex-col h-full"
+        className="hidden md:flex w-96 border-r border-gray-800 flex-col h-full"
       >
         <div className="p-4 border-b border-gray-800 flex items-center space-x-3 bg-gradient-to-r from-gray-900 to-gray-800 glow-white flex-shrink-0">
           <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>

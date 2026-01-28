@@ -2,104 +2,66 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Eye, RefreshCw, ExternalLink } from "lucide-react"
+import { Eye, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { ProjectFile } from "./workspace-area"
+import { generateCodeSandboxParameters, getCodeSandboxEmbedUrl } from "@/lib/codesandbox"
 
 interface PreviewPanelProps {
   files: ProjectFile[]
 }
 
 export function PreviewPanel({ files }: PreviewPanelProps) {
-  const [previewContent, setPreviewContent] = useState("")
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [previewUrl, setPreviewUrl] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const generatePreview = () => {
-    console.log("[v0] Generating preview for files:", files.length)
-    const htmlFile = files.find((f) => f.name.endsWith(".html") || f.language === "html")
-    const cssFiles = files.filter((f) => f.name.endsWith(".css") || f.language === "css")
-    const jsFiles = files.filter((f) => f.name.endsWith(".js") || f.language === "javascript")
-
-    console.log("[v0] Found files - HTML:", !!htmlFile, "CSS:", cssFiles.length, "JS:", jsFiles.length)
-
-    if (!htmlFile) {
-      setPreviewContent("")
+  const updatePreview = () => {
+    if (files.length === 0) {
       setPreviewUrl("")
       return
     }
 
-    let html = htmlFile.content
-
-    if (cssFiles.length > 0) {
-      const cssContent = cssFiles.map((f) => f.content).join("\n")
-      const styleTag = `<style>\n${cssContent}\n</style>`
-
-      if (html.includes("</head>")) {
-        html = html.replace("</head>", `${styleTag}\n</head>`)
-      } else if (html.includes("<head>")) {
-        html = html.replace("<head>", `<head>\n${styleTag}`)
-      } else {
-        // If no head tag, add it
-        html = `<!DOCTYPE html>\n<html>\n<head>\n${styleTag}\n</head>\n<body>\n${html}\n</body>\n</html>`
+    setIsLoading(true)
+    
+    // Convert ProjectFile[] to SandboxFiles format
+    const sandboxFiles = files.reduce((acc, file) => {
+      if (file.type === "file") {
+        acc[file.path] = { content: file.content }
       }
+      return acc
+    }, {} as any)
+
+    try {
+      const parameters = generateCodeSandboxParameters(sandboxFiles)
+      const url = getCodeSandboxEmbedUrl(parameters, { 
+        view: "preview", 
+        runonclick: 0 
+      })
+      setPreviewUrl(url)
+    } catch (error) {
+      console.error("Failed to generate CodeSandbox preview:", error)
+    } finally {
+      setIsLoading(false)
     }
-
-    if (jsFiles.length > 0) {
-      const jsContent = jsFiles.map((f) => f.content).join("\n")
-      const scriptTag = `<script>\n${jsContent}\n</script>`
-
-      if (html.includes("</body>")) {
-        html = html.replace("</body>", `${scriptTag}\n</body>`)
-      } else if (html.includes("<body>")) {
-        html = html.replace("</body>", `${scriptTag}\n</body>`)
-      } else {
-        // If no body tag, add the script at the end
-        html = `${html}\n${scriptTag}`
-      }
-    }
-
-    const blob = new Blob([html], { type: "text/html" })
-    const url = URL.createObjectURL(blob)
-
-    setPreviewContent(html)
-    setPreviewUrl(url)
-
-    console.log("[v0] Preview generated successfully")
   }
 
   useEffect(() => {
-    generatePreview()
-
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
-      }
-    }
+    const timer = setTimeout(() => {
+      updatePreview()
+    }, 1000) // Debounce preview updates
+    return () => clearTimeout(timer)
   }, [files])
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
-      }
-    }
-  }, [previewUrl])
 
   const refreshPreview = () => {
     setIsRefreshing(true)
-    console.log("[v0] Refreshing preview...")
-    setTimeout(() => {
-      generatePreview()
-      setIsRefreshing(false)
-    }, 500)
+    updatePreview()
+    setTimeout(() => setIsRefreshing(false), 1000)
   }
 
-  const openInNewTab = () => {
-    if (previewContent) {
-      const blob = new Blob([previewContent], { type: "text/html" })
-      const url = URL.createObjectURL(blob)
-      window.open(url, "_blank")
+  const openInCodeSandbox = () => {
+    if (previewUrl) {
+      window.open(previewUrl.replace("embed=1", "embed=0"), "_blank")
     }
   }
 
@@ -108,7 +70,7 @@ export function PreviewPanel({ files }: PreviewPanelProps) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="w-full h-full bg-white rounded-lg border border-gray-800 flex items-center justify-center"
+        className="w-full h-full bg-gray-900 rounded-lg border border-gray-800 flex items-center justify-center"
       >
         <div className="text-center text-gray-500">
           <Eye className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -123,47 +85,52 @@ export function PreviewPanel({ files }: PreviewPanelProps) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full h-full bg-white rounded-lg border border-gray-800 flex flex-col"
+      className="w-full h-full bg-white rounded-lg border border-gray-800 flex flex-col overflow-hidden"
     >
       {/* Preview Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center space-x-2">
           <Eye className="w-4 h-4 text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Live Preview</span>
+          <span className="text-sm font-medium text-gray-700">Live Preview (CodeSandbox)</span>
+          {isLoading && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
         </div>
         <div className="flex items-center space-x-2">
           <Button
             size="sm"
             variant="ghost"
             onClick={refreshPreview}
-            disabled={isRefreshing}
-            className="text-gray-600 hover:text-gray-800"
+            disabled={isRefreshing || isLoading}
+            className="text-gray-600 hover:text-gray-800 h-8 w-8 p-0"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
-          <Button size="sm" variant="ghost" onClick={openInNewTab} className="text-gray-600 hover:text-gray-800">
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={openInCodeSandbox} 
+            className="text-gray-600 hover:text-gray-800 h-8 w-8 p-0"
+            title="Open in CodeSandbox"
+          >
             <ExternalLink className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 bg-white relative">
         {previewUrl ? (
           <iframe
             src={previewUrl}
             className="w-full h-full border-none"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            title="Code Preview"
-            onLoad={() => console.log("[v0] Preview iframe loaded successfully")}
-            onError={() => console.log("[v0] Preview iframe error")}
+            allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+            sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+            title="CodeSandbox Preview"
           />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
             <div className="text-center">
-              <Eye className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>No HTML file to preview</p>
-              <p className="text-sm">Generate HTML code to see the preview</p>
+              <Loader2 className="w-12 h-12 mx-auto mb-2 animate-spin opacity-20" />
+              <p>Preparing preview...</p>
             </div>
           </div>
         )}

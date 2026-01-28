@@ -14,8 +14,10 @@ export interface ProjectFile {
   name: string
   content: string
   language: string
-  path: string
+  path: string // Full path including folders, e.g., "src/components/Button.tsx"
   lastModified: Date
+  type: "file" | "folder"
+  parentId: string | null // For folder structure
 }
 
 export interface Project {
@@ -33,9 +35,10 @@ export function WorkspaceArea() {
   const [activeFileId, setActiveFileId] = useState<string | null>(null)
 
   const createDefaultProject = () => {
+    const now = new Date()
     const defaultFiles: ProjectFile[] = [
       {
-        id: "index_html",
+        id: "root_index_html",
         name: "index.html",
         content: `<!DOCTYPE html>
 <html lang="en">
@@ -43,79 +46,163 @@ export function WorkspaceArea() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sparrow AI Generated App</title>
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="app">
-        <h1>Welcome to Sparrow AI</h1>
-        <p>Your generated content will appear here...</p>
-    </div>
-    <script src="script.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>`,
         language: "html",
         path: "index.html",
-        lastModified: new Date(),
+        lastModified: now,
+        type: "file",
+        parentId: null,
       },
       {
-        id: "styles_css",
-        name: "styles.css",
-        content: `/* Sparrow AI Generated Styles */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: #f5f5f5;
-    color: #333;
+        id: "root_package_json",
+        name: "package.json",
+        content: JSON.stringify({
+          name: "sparrow-react-ts",
+          private: true,
+          version: "0.0.0",
+          type: "module",
+          scripts: {
+            dev: "vite",
+            build: "tsc && vite build",
+            preview: "vite preview"
+          },
+          dependencies: {
+            "react": "^18.2.0",
+            "react-dom": "^18.2.0",
+            "lucide-react": "latest"
+          },
+          devDependencies: {
+            "@types/react": "^18.2.0",
+            "@types/react-dom": "^18.2.0",
+            "@vitejs/plugin-react": "^4.0.0",
+            "typescript": "^5.0.0",
+            "vite": "^4.4.0"
+          }
+        }, null, 2),
+        language: "json",
+        path: "package.json",
+        lastModified: now,
+        type: "file",
+        parentId: null,
+      },
+      {
+        id: "folder_src",
+        name: "src",
+        content: "",
+        language: "",
+        path: "src",
+        lastModified: now,
+        type: "folder",
+        parentId: null,
+      },
+      {
+        id: "src_main_tsx",
+        name: "main.tsx",
+        content: `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)`,
+        language: "typescript",
+        path: "src/main.tsx",
+        lastModified: now,
+        type: "file",
+        parentId: "folder_src",
+      },
+      {
+        id: "src_app_tsx",
+        name: "App.tsx",
+        content: `import React from 'react'
+import { Sparkles } from 'lucide-react'
+
+function App() {
+  return (
+    <div className="app-container">
+      <header>
+        <Sparkles className="icon" />
+        <h1>Sparrow AI</h1>
+      </header>
+      <main>
+        <p>Welcome to your React + TypeScript project!</p>
+        <p>Start chatting to build your application.</p>
+      </main>
+    </div>
+  )
 }
 
-#app {
-    max-width: 1200px;
-    margin: 0 auto;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+export default App`,
+        language: "typescript",
+        path: "src/App.tsx",
+        lastModified: now,
+        type: "file",
+        parentId: "folder_src",
+      },
+      {
+        id: "src_index_css",
+        name: "index.css",
+        content: `body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0f172a;
+  color: white;
 }
 
-h1 {
-    color: #2c3e50;
-    margin-bottom: 20px;
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.icon {
+  width: 3rem;
+  height: 3rem;
+  color: #38bdf8;
 }`,
         language: "css",
-        path: "styles.css",
-        lastModified: new Date(),
-      },
-      {
-        id: "script_js",
-        name: "script.js",
-        content: `// Sparrow AI Generated JavaScript
-console.log('Sparrow AI app loaded successfully!');
-
-// Your generated JavaScript code will be added here
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, app ready!');
-});`,
-        language: "javascript",
-        path: "script.js",
-        lastModified: new Date(),
-      },
+        path: "src/index.css",
+        lastModified: now,
+        type: "file",
+        parentId: "folder_src",
+      }
     ]
 
     const newProject: Project = {
       id: Date.now().toString(),
-      name: "Sparrow AI Project",
-      description: "Generated web application",
+      name: "Sparrow React Project",
+      description: "React + TypeScript application",
       files: defaultFiles,
-      createdAt: new Date(),
-      lastModified: new Date(),
+      createdAt: now,
+      lastModified: now,
     }
 
     setCurrentProject(newProject)
-    setActiveFileId("index_html")
+    setActiveFileId("src_app_tsx")
   }
 
-  // Load project from localStorage on mount or create default
   useEffect(() => {
     const savedProject = localStorage.getItem("sparrow_current_project")
     if (savedProject) {
@@ -139,65 +226,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, [])
 
-  // Save project to localStorage whenever it changes
   useEffect(() => {
     if (currentProject) {
       localStorage.setItem("sparrow_current_project", JSON.stringify(currentProject))
     }
   }, [currentProject])
 
-  // Listen for code generation events from chat
   useEffect(() => {
     const handleCodeGenerated = (event: CustomEvent) => {
       const { code, language, filename } = event.detail
       addOrUpdateFile(filename, code, language)
     }
 
-    const handleCodeContentUpdate = (event: CustomEvent) => {
-      const { htmlContent, cssContent, jsContent } = event.detail
-
-      if (htmlContent) updateSpecificFile("index.html", htmlContent, "html")
-      if (cssContent) updateSpecificFile("styles.css", cssContent, "css")
-      if (jsContent) updateSpecificFile("script.js", jsContent, "javascript")
-    }
-
     const handleCreateProjectFiles = (event: CustomEvent) => {
       const { files } = event.detail
-      console.log("[v0] Creating project files from structure:", files)
-
       if (!currentProject) {
         createDefaultProject()
         return
       }
 
-      // Ensure all files from structure exist
       const now = new Date()
       setCurrentProject((prev) => {
         if (!prev) return null
-
         const updatedFiles = [...prev.files]
-
-        files.forEach((filename: string) => {
-          const exists = updatedFiles.some((f) => f.name === filename)
-          if (!exists) {
-            const fileId = filename.replace(/[^a-zA-Z0-9]/g, "_")
-            const language = filename.endsWith(".html")
-              ? "html"
-              : filename.endsWith(".css")
-                ? "css"
-                : filename.endsWith(".js")
-                  ? "javascript"
-                  : "text"
-
-            updatedFiles.push({
-              id: fileId,
-              name: filename,
-              content: `// ${filename} - Generated by Sparrow AI\n// Content will be added here...`,
-              language,
-              path: filename,
-              lastModified: now,
-            })
-          }
+        
+        files.forEach((filePath: string) => {
+          ensurePathExists(updatedFiles, filePath, now)
         })
 
         return {
@@ -210,363 +264,199 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const handleCreateNewProject = (event: CustomEvent) => {
       const { sessionId, projectName } = event.detail
-      console.log("[v0] Creating new project for chat session:", sessionId)
-
-      const defaultFiles: ProjectFile[] = [
-        {
-          id: "index_html",
-          name: "index.html",
-          content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sparrow AI Generated App</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div id="app">
-        <h1>Welcome to Sparrow AI</h1>
-        <p>Start chatting to generate your web application...</p>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>`,
-          language: "html",
-          path: "index.html",
-          lastModified: new Date(),
-        },
-        {
-          id: "styles_css",
-          name: "styles.css",
-          content: `/* Sparrow AI Generated Styles */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: #f5f5f5;
-    color: #333;
-}
-
-#app {
-    max-width: 1200px;
-    margin: 0 auto;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-h1 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-}`,
-          language: "css",
-          path: "styles.css",
-          lastModified: new Date(),
-        },
-        {
-          id: "script_js",
-          name: "script.js",
-          content: `// Sparrow AI Generated JavaScript
-console.log('Sparrow AI app loaded successfully!');
-
-// Your generated JavaScript code will be added here
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, app ready!');
-});`,
-          language: "javascript",
-          path: "script.js",
-          lastModified: new Date(),
-        },
-      ]
-
-      const newProject: Project = {
-        id: sessionId,
-        name: projectName || "Sparrow AI Project",
-        description: "Generated web application",
-        files: defaultFiles,
-        createdAt: new Date(),
-        lastModified: new Date(),
-      }
-
-      setCurrentProject(newProject)
-      setActiveFileId("index_html")
-      setActiveTab("preview") // Start with preview tab for new projects
+      createDefaultProject()
+      setCurrentProject(prev => prev ? { ...prev, id: sessionId, name: projectName || prev.name } : null)
+      setActiveTab("preview")
     }
 
     window.addEventListener("codeGenerated", handleCodeGenerated as EventListener)
-    window.addEventListener("codeContentUpdate", handleCodeContentUpdate as EventListener)
     window.addEventListener("createProjectFiles", handleCreateProjectFiles as EventListener)
     window.addEventListener("createNewProject", handleCreateNewProject as EventListener)
 
     return () => {
       window.removeEventListener("codeGenerated", handleCodeGenerated as EventListener)
-      window.removeEventListener("codeContentUpdate", handleCodeContentUpdate as EventListener)
       window.removeEventListener("createProjectFiles", handleCreateProjectFiles as EventListener)
       window.removeEventListener("createNewProject", handleCreateNewProject as EventListener)
     }
   }, [currentProject])
 
-  const createNewProject = (name: string, description = "") => {
-    const newProject: Project = {
-      id: Date.now().toString(),
-      name,
-      description,
-      files: [],
-      createdAt: new Date(),
-      lastModified: new Date(),
-    }
-    setCurrentProject(newProject)
-    setActiveFileId(null)
-  }
+  const ensurePathExists = (files: ProjectFile[], fullPath: string, now: Date) => {
+    const parts = fullPath.split('/')
+    let currentPath = ""
+    let currentParentId: string | null = null
 
-  const addOrUpdateFile = (filename: string, content: string, language: string) => {
-    if (!currentProject) {
-      createNewProject("Untitled Project", "Generated from chat")
-    }
-
-    const fileId = filename.replace(/[^a-zA-Z0-9]/g, "_")
-    const now = new Date()
-
-    setCurrentProject((prev) => {
-      if (!prev) return null
-
-      const existingIndex = prev.files.findIndex((f) => f.name === filename)
-      let updatedFiles
-
-      if (existingIndex >= 0) {
-        // Update existing file
-        updatedFiles = [...prev.files]
-        updatedFiles[existingIndex] = {
-          ...updatedFiles[existingIndex],
-          content,
-          language,
-          lastModified: now,
-        }
-      } else {
-        // Add new file
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i]
+      currentPath = currentPath ? `${currentPath}/${part}` : part
+      const isLast = i === parts.length - 1
+      const type = isLast && part.includes('.') ? "file" : "folder"
+      
+      const existing = files.find(f => f.path === currentPath)
+      if (!existing) {
+        const id = currentPath.replace(/[^a-zA-Z0-9]/g, "_")
         const newFile: ProjectFile = {
-          id: fileId,
-          name: filename,
-          content,
-          language,
-          path: filename,
+          id,
+          name: part,
+          content: type === "file" ? `// ${part} - Generated by Sparrow AI` : "",
+          language: type === "file" ? getLanguageFromFilename(part) : "",
+          path: currentPath,
           lastModified: now,
+          type,
+          parentId: currentParentId
         }
-        updatedFiles = [...prev.files, newFile]
+        files.push(newFile)
+        currentParentId = id
+      } else {
+        currentParentId = existing.id
       }
-
-      return {
-        ...prev,
-        files: updatedFiles,
-        lastModified: now,
-      }
-    })
-
-    setActiveFileId(fileId)
-    setActiveTab("code") // Switch to code tab when new code is generated
-  }
-
-  const updateSpecificFile = (filename: string, content: string, language: string) => {
-    if (!currentProject) return
-
-    const now = new Date()
-
-    setCurrentProject((prev) => {
-      if (!prev) return null
-
-      const updatedFiles = prev.files.map((file) => {
-        if (file.name === filename) {
-          return {
-            ...file,
-            content,
-            language,
-            lastModified: now,
-          }
-        }
-        return file
-      })
-
-      return {
-        ...prev,
-        files: updatedFiles,
-        lastModified: now,
-      }
-    })
-
-    // Switch to code tab when content is updated
-    setActiveTab("code")
-  }
-
-  const deleteFile = (fileId: string) => {
-    setCurrentProject((prev) => {
-      if (!prev) return null
-
-      const updatedFiles = prev.files.filter((f) => f.id !== fileId)
-      return {
-        ...prev,
-        files: updatedFiles,
-        lastModified: new Date(),
-      }
-    })
-
-    if (activeFileId === fileId) {
-      setActiveFileId(null)
     }
   }
 
-  const renameFile = (fileId: string, newName: string) => {
+  const getLanguageFromFilename = (filename: string): string => {
+    const ext = filename.split(".").pop()?.toLowerCase()
+    const map: Record<string, string> = {
+      html: "html", css: "css", js: "javascript", ts: "typescript",
+      tsx: "typescript", jsx: "javascript", json: "json"
+    }
+    return map[ext || ""] || "text"
+  }
+
+  const addOrUpdateFile = (filePath: string, content: string, language: string) => {
+    const now = new Date()
     setCurrentProject((prev) => {
       if (!prev) return null
+      const updatedFiles = [...prev.files]
+      ensurePathExists(updatedFiles, filePath, now)
+      
+      const fileIndex = updatedFiles.findIndex(f => f.path === filePath)
+      if (fileIndex >= 0) {
+        updatedFiles[fileIndex] = {
+          ...updatedFiles[fileIndex],
+          content,
+          language: language || updatedFiles[fileIndex].language,
+          lastModified: now
+        }
+      }
+      
+      return { ...prev, files: updatedFiles, lastModified: now }
+    })
+  }
 
+  const handleFileUpdate = (fileId: string, content: string) => {
+    setCurrentProject((prev) => {
+      if (!prev) return null
       return {
         ...prev,
-        files: prev.files.map((file) =>
-          file.id === fileId
-            ? {
-                ...file,
-                name: newName,
-                path: newName,
-                lastModified: new Date(),
-              }
-            : file,
-        ),
+        files: prev.files.map((f) => (f.id === fileId ? { ...f, content, lastModified: new Date() } : f)),
         lastModified: new Date(),
       }
     })
   }
 
-  const activeFile = currentProject?.files.find((f) => f.id === activeFileId)
-  const files = currentProject?.files || []
+  const handleFileDelete = (fileId: string) => {
+    setCurrentProject((prev) => {
+      if (!prev) return null
+      // Also delete children if it's a folder
+      const toDelete = new Set([fileId])
+      let changed = true
+      while (changed) {
+        changed = false
+        prev.files.forEach(f => {
+          if (f.parentId && toDelete.has(f.parentId) && !toDelete.has(f.id)) {
+            toDelete.add(f.id)
+            changed = true
+          }
+        })
+      }
+      return {
+        ...prev,
+        files: prev.files.filter((f) => !toDelete.has(f.id)),
+        lastModified: new Date(),
+      }
+    })
+    if (activeFileId === fileId) setActiveFileId(null)
+  }
+
+  const handleFileRename = (fileId: string, newName: string) => {
+    setCurrentProject((prev) => {
+      if (!prev) return null
+      const file = prev.files.find(f => f.id === fileId)
+      if (!file) return prev
+      
+      const oldPath = file.path
+      const pathParts = oldPath.split('/')
+      pathParts[pathParts.length - 1] = newName
+      const newPath = pathParts.join('/')
+      
+      return {
+        ...prev,
+        files: prev.files.map((f) => {
+          if (f.id === fileId) {
+            return { ...f, name: newName, path: newPath, lastModified: new Date() }
+          }
+          if (f.path.startsWith(oldPath + '/')) {
+            return { ...f, path: f.path.replace(oldPath, newPath) }
+          }
+          return f
+        }),
+        lastModified: new Date(),
+      }
+    })
+  }
 
   return (
-    <div className="h-full flex flex-col">
-      <motion.div
-        className="border-b border-gray-800 p-2 md:p-4 backdrop-blur-sm bg-black/50 flex-shrink-0"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-900/80 backdrop-blur-sm h-auto">
-            <TabsTrigger
-              value="preview"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
-            >
-              <Eye className="w-4 h-4 md:mr-1" />
-              <span className="hidden sm:inline">Preview</span>
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <div className="px-4 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
+          <TabsList className="bg-transparent border-none">
+            <TabsTrigger value="preview" className="data-[state=active]:bg-gray-800">
+              <Eye className="w-4 h-4 mr-2" /> Preview
             </TabsTrigger>
-            <TabsTrigger
-              value="code"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
-            >
-              <Code className="w-4 h-4 md:mr-1" />
-              <span className="hidden sm:inline">Code</span>
-              <AnimatePresence>
-                {files.length > 0 && (
-                  <motion.span
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="ml-0 md:ml-1 bg-white text-black rounded-full px-1.5 md:px-2 py-0.5 text-xs pulse-glow"
-                  >
-                    {files.length}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+            <TabsTrigger value="code" className="data-[state=active]:bg-gray-800">
+              <Code className="w-4 h-4 mr-2" /> Code
             </TabsTrigger>
-            <TabsTrigger
-              value="status"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
-            >
-              <Activity className="w-4 h-4 md:mr-1" />
-              <span className="hidden sm:inline">Status</span>
+            <TabsTrigger value="status" className="data-[state=active]:bg-gray-800">
+              <Activity className="w-4 h-4 mr-2" /> Status
             </TabsTrigger>
-            <TabsTrigger
-              value="project"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
-            >
-              <Settings className="w-4 h-4 md:mr-1" />
-              <span className="hidden sm:inline">Project</span>
+            <TabsTrigger value="project" className="data-[state=active]:bg-gray-800">
+              <Settings className="w-4 h-4 mr-2" /> Project
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-      </motion.div>
+          {currentProject && (
+            <div className="text-xs text-gray-500 font-mono">
+              {currentProject.name}
+            </div>
+          )}
+        </div>
 
-      <div className="flex-1 p-2 md:p-4 min-h-0 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+        <div className="flex-1 relative overflow-hidden">
           <AnimatePresence mode="wait">
-            <TabsContent value="preview" className="h-full overflow-hidden">
-              <motion.div
-                key="preview"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-full"
-              >
-                <PreviewPanel files={files} />
-              </motion.div>
+            <TabsContent value="preview" className="absolute inset-0 m-0 p-4">
+              <PreviewPanel files={currentProject?.files || []} />
             </TabsContent>
-
-            <TabsContent value="code" className="h-full overflow-hidden">
-              <motion.div
-                key="code"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-full"
-              >
-                <CodeEditor
-                  files={files}
-                  activeFileId={activeFileId}
-                  onFileSelect={setActiveFileId}
-                  onFileUpdate={(fileId, content) => {
-                    const file = currentProject?.files.find(f => f.id === fileId)
-                    if (file) {
-                      updateSpecificFile(file.name, content, file.language)
-                    }
-                  }}
-                  onFileDelete={deleteFile}
-                  onFileRename={renameFile}
-                />
-              </motion.div>
+            <TabsContent value="code" className="absolute inset-0 m-0 p-4">
+              <CodeEditor
+                files={currentProject?.files || []}
+                activeFileId={activeFileId}
+                onFileSelect={setActiveFileId}
+                onFileUpdate={handleFileUpdate}
+                onFileDelete={handleFileDelete}
+                onFileRename={handleFileRename}
+              />
             </TabsContent>
-
-            <TabsContent value="status" className="h-full overflow-hidden">
-              <motion.div
-                key="status"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-full"
-              >
-                <StatusPanel files={files} project={currentProject} />
-              </motion.div>
+            <TabsContent value="status" className="absolute inset-0 m-0 p-4">
+              <StatusPanel />
             </TabsContent>
-
-            <TabsContent value="project" className="h-full overflow-hidden">
-              <motion.div
-                key="project"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-full"
-              >
-                <ProjectManager
-                  currentProject={currentProject}
-                  onProjectCreate={createNewProject}
-                  onProjectUpdate={setCurrentProject}
-                />
-              </motion.div>
+            <TabsContent value="project" className="absolute inset-0 m-0 p-4">
+              <ProjectManager
+                currentProject={currentProject}
+                onProjectCreate={createDefaultProject}
+                onProjectUpdate={setCurrentProject}
+              />
             </TabsContent>
           </AnimatePresence>
-        </Tabs>
-      </div>
+        </div>
+      </Tabs>
     </div>
   )
 }
