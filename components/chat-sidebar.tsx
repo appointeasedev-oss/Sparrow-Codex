@@ -33,7 +33,7 @@ export function ChatSidebar() {
   const [currentSession, setCurrentSession] = useState<string | null>(null)
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedModel, setSelectedModel] = useState<string>("qwen/qwen3-coder:free")
+  const [selectedModel, setSelectedModel] = useState<string>("claude-sonnet-4")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imageAnalysis, setImageAnalysis] = useState<string>("")
@@ -41,48 +41,27 @@ export function ChatSidebar() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const availableModels = [
-    { name: 'xAI: Grok 4.1 Fast', id: 'x-ai/grok-4.1-fast', inputCost: 0, outputCost: 0, contextTokens: 2000000 },
-    { name: 'xAI: Grok 4.1 Fast (free)', id: 'x-ai/grok-4.1-fast:free', inputCost: 0, outputCost: 0, contextTokens: 2000000 },
-    { name: 'Kwaipilot: KAT-Coder-Pro V1 (free)', id: 'kwaipilot/kat-coder-pro:free', inputCost: 0, outputCost: 0, contextTokens: 256000 },
-    { name: 'NVIDIA: Nemotron Nano 12B 2 VL (free)', id: 'nvidia/nemotron-nano-12b-v2-vl:free', inputCost: 0, outputCost: 0, contextTokens: 128000 },
-    { name: 'Tongyi DeepResearch 30B A3B (free)', id: 'alibaba/tongyi-deepresearch-30b-a3b:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Meituan: LongCat Flash Chat (free)', id: 'meituan/longcat-flash-chat:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'NVIDIA: Nemotron Nano 9B V2 (free)', id: 'nvidia/nemotron-nano-9b-v2:free', inputCost: 0, outputCost: 0, contextTokens: 128000 },
-    { name: 'OpenAI: gpt-oss-20b (free)', id: 'openai/gpt-oss-20b:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Z.AI: GLM 4.5 Air (free)', id: 'z-ai/glm-4.5-air:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Qwen: Qwen3 Coder 480B A35B (free)', id: 'qwen/qwen3-coder:free', inputCost: 0, outputCost: 0, contextTokens: 262000 },
-    { name: 'MoonshotAI: Kimi K2 0711 (free)', id: 'moonshotai/kimi-k2:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'Venice: Uncensored (free)', id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'Google: Gemma 3n 2B (free)', id: 'google/gemma-3n-e2b-it:free', inputCost: 0, outputCost: 0, contextTokens: 8192 },
-    { name: 'TNG: DeepSeek R1T2 Chimera (free)', id: 'tngtech/deepseek-r1t2-chimera:free', inputCost: 0, outputCost: 0, contextTokens: 163840 },
-    { name: 'Mistral: Mistral Small 3.2 24B (free)', id: 'mistralai/mistral-small-3.2-24b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'DeepSeek: DeepSeek R1 0528 Qwen3 8B (free)', id: 'deepseek/deepseek-r1-0528-qwen3-8b:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'DeepSeek: R1 0528 (free)', id: 'deepseek/deepseek-r1-0528:free', inputCost: 0, outputCost: 0, contextTokens: 163840 },
-    { name: 'Google: Gemma 3n 4B (free)', id: 'google/gemma-3n-e4b-it:free', inputCost: 0, outputCost: 0, contextTokens: 8192 },
-    { name: 'Qwen: Qwen3 4B (free)', id: 'qwen/qwen3-4b:free', inputCost: 0, outputCost: 0, contextTokens: 40960 },
-    { name: 'Qwen: Qwen3 30B A3B (free)', id: 'qwen/qwen3-30b-a3b:free', inputCost: 0, outputCost: 0, contextTokens: 40960 },
-    { name: 'Qwen: Qwen3 14B (free)', id: 'qwen/qwen3-14b:free', inputCost: 0, outputCost: 0, contextTokens: 40960 },
-    { name: 'Qwen: Qwen3 235B A22B (free)', id: 'qwen/qwen3-235b-a22b:free', inputCost: 0, outputCost: 0, contextTokens: 40960 },
-    { name: 'TNG: DeepSeek R1T Chimera (free)', id: 'tngtech/deepseek-r1t-chimera:free', inputCost: 0, outputCost: 0, contextTokens: 163840 },
-    { name: 'Microsoft: MAI DS R1 (free)', id: 'microsoft/mai-ds-r1:free', inputCost: 0, outputCost: 0, contextTokens: 163840 },
-    { name: 'ArliAI: QwQ 32B RpR v1 (free)', id: 'arliai/qwq-32b-arliai-rpr-v1:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'Qwen: Qwen2.5 VL 32B Instruct (free)', id: 'qwen/qwen2.5-vl-32b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 16384 },
-    { name: 'DeepSeek: DeepSeek V3 0324 (free)', id: 'deepseek/deepseek-chat-v3-0324:free', inputCost: 0, outputCost: 0, contextTokens: 163840 },
-    { name: 'Mistral: Mistral Small 3.1 24B (free)', id: 'mistralai/mistral-small-3.1-24b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 96000 },
-    { name: 'Google: Gemma 3 4B (free)', id: 'google/gemma-3-4b-it:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'Google: Gemma 3 12B (free)', id: 'google/gemma-3-12b-it:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'Google: Gemma 3 27B (free)', id: 'google/gemma-3-27b-it:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Mistral: Mistral Small 3 (free)', id: 'mistralai/mistral-small-24b-instruct-2501:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'DeepSeek: R1 Distill Llama 70B (free)', id: 'deepseek/deepseek-r1-distill-llama-70b:free', inputCost: 0, outputCost: 0, contextTokens: 8192 },
-    { name: 'DeepSeek: R1 (free)', id: 'deepseek/deepseek-r1:free', inputCost: 0, outputCost: 0, contextTokens: 163840 },
-    { name: 'Google: Gemini 2.0 Flash Experimental (free)', id: 'google/gemini-2.0-flash-exp:free', inputCost: 0, outputCost: 0, contextTokens: 1048576 },
-    { name: 'Meta: Llama 3.3 70B Instruct (free)', id: 'meta-llama/llama-3.3-70b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Qwen2.5 Coder 32B Instruct (free)', id: 'qwen/qwen-2.5-coder-32b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'Meta: Llama 3.2 3B Instruct (free)', id: 'meta-llama/llama-3.2-3b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Qwen2.5 72B Instruct (free)', id: 'qwen/qwen-2.5-72b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
-    { name: 'Nous: Hermes 3 405B Instruct (free)', id: 'nousresearch/hermes-3-llama-3.1-405b:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Mistral: Mistral Nemo (free)', id: 'mistralai/mistral-nemo:free', inputCost: 0, outputCost: 0, contextTokens: 131072 },
-    { name: 'Mistral: Mistral 7B Instruct (free)', id: 'mistralai/mistral-7b-instruct:free', inputCost: 0, outputCost: 0, contextTokens: 32768 },
+    { name: 'Claude Sonnet 4.5', id: 'claude-sonnet-4-5', inputCost: 0, outputCost: 0, contextTokens: 200000 },
+    { name: 'Claude Sonnet 4', id: 'claude-sonnet-4', inputCost: 0, outputCost: 0, contextTokens: 200000 },
+    { name: 'Claude Haiku 4.5', id: 'claude-haiku-4-5', inputCost: 0, outputCost: 0, contextTokens: 200000 },
+    { name: 'Claude 3.7 Sonnet', id: 'claude-3-7-sonnet-latest', inputCost: 0, outputCost: 0, contextTokens: 200000 },
+    { name: 'GPT-4o', id: 'gpt-4o', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'GPT-4o Mini', id: 'gpt-4o-mini', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'GPT-4.1', id: 'gpt-4.1', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'GPT-4.1 Mini', id: 'gpt-4.1-mini', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'o3 Mini', id: 'o3-mini', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'o1', id: 'o1', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'o1 Mini', id: 'o1-mini', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'Gemini 2.5 Flash', id: 'gemini-2.5-flash', inputCost: 0, outputCost: 0, contextTokens: 1000000 },
+    { name: 'Gemini 2.5 Flash Lite', id: 'gemini-2.5-flash-lite', inputCost: 0, outputCost: 0, contextTokens: 1000000 },
+    { name: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash', inputCost: 0, outputCost: 0, contextTokens: 1000000 },
+    { name: 'Gemini 1.5 Flash', id: 'gemini-1.5-flash', inputCost: 0, outputCost: 0, contextTokens: 1000000 },
+    { name: 'Gemini 1.5 Pro', id: 'gemini-1.5-pro', inputCost: 0, outputCost: 0, contextTokens: 2000000 },
+    { name: 'DeepSeek Chat', id: 'deepseek-chat', inputCost: 0, outputCost: 0, contextTokens: 64000 },
+    { name: 'DeepSeek R1', id: 'deepseek-r1', inputCost: 0, outputCost: 0, contextTokens: 64000 },
+    { name: 'Mistral Large', id: 'mistral-large-latest', inputCost: 0, outputCost: 0, contextTokens: 128000 },
+    { name: 'Codestral', id: 'codestral-latest', inputCost: 0, outputCost: 0, contextTokens: 32000 },
+    { name: 'Grok Beta', id: 'grok-beta', inputCost: 0, outputCost: 0, contextTokens: 128000 },
   ]
 
   const scrollToBottom = () => {
@@ -360,52 +339,21 @@ export function ChatSidebar() {
 
     try {
       const imageBase64 = await convertImageToBase64(file)
-      const apiKey = localStorage.getItem("sparrow_openrouter_key")
 
-      if (!apiKey) {
-        throw new Error("No API key found. Please refresh the page to set up your API key.")
+      console.log("[v0] Processing image with Puter.js vision API")
+
+      const puter = (window as any).puter
+      if (!puter) {
+        throw new Error("Puter.js not loaded. Please refresh the page.")
       }
 
-      console.log("[v0] Processing image with vision API")
+      const response = await puter.ai.chat(
+        "What is in this image? Describe it in detail.",
+        imageBase64,
+        { model: "gpt-4o" }
+      )
 
-      const visionResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Sparrow AI",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "qwen/qwen2.5-vl-72b-instruct:free",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "What is in this image? Describe it in detail.",
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: imageBase64,
-                  },
-                },
-              ],
-            },
-          ],
-        }),
-      })
-
-      if (!visionResponse.ok) {
-        const errorText = await visionResponse.text()
-        console.error("[v0] Vision API error:", errorText)
-        throw new Error(`Vision API error: ${visionResponse.status}`)
-      }
-
-      const visionData = await visionResponse.json()
-      const imageDescription = visionData.choices?.[0]?.message?.content || "Could not analyze image"
+      const imageDescription = typeof response === 'string' ? response : response?.message?.content || "Could not analyze image"
 
       console.log("[v0] Image analysis received:", imageDescription)
       setImageAnalysis(imageDescription)
@@ -465,11 +413,11 @@ export function ChatSidebar() {
       ),
     )
 
-    // Wait 3 seconds then send to AI
+    // Wait 1 second then send to AI
     setTimeout(async () => {
-      const makeAPICall = async (retryCount = 0): Promise<any> => {
+      const makePuterAPICall = async (retryCount = 0): Promise<string> => {
         const maxRetries = 3
-        const baseDelay = 1000 // 1 second
+        const baseDelay = 1000
 
         try {
           const systemPrompt = `You are Sparrow, an AI coding assistant specialized in web development. You help users create complete web applications with HTML, CSS, and JavaScript.
@@ -541,72 +489,52 @@ MANDATORY RULES:
 
 The system will first create all files from your structure, then populate them with your code.`
 
-          const apiKey = localStorage.getItem("sparrow_openrouter_key")
-          if (!apiKey) {
-            throw new Error("No API key found. Please refresh the page to set up your API key.")
+          const puter = (window as any).puter
+          if (!puter) {
+            throw new Error("Puter.js not loaded. Please refresh the page.")
           }
 
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "HTTP-Referer": window.location.origin,
-              "X-Title": "Sparrow AI",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: selectedModel,
-              messages: [
-                {
-                  role: "system",
-                  content: systemPrompt,
-                },
-                {
-                  role: "user",
-                  content: userMessage.content,
-                },
-              ],
-            }),
-          })
+          console.log("[v0] Calling Puter.js AI with model:", selectedModel)
 
-          if (response.status === 429) {
-            if (retryCount < maxRetries) {
-              const delay = baseDelay * Math.pow(2, retryCount)
-              console.log(`Rate limited. Retrying in ${delay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+          const response = await puter.ai.chat([
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage.content }
+          ], { model: selectedModel })
 
-              const rateLimitMessage: Message = {
-                id: (Date.now() + Math.random()).toString(),
-                role: "assistant",
-                content: `Rate limit reached. Retrying in ${delay / 1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`,
-                timestamp: new Date(),
-              }
+          console.log("[v0] Puter.js response:", response)
 
-              setSessions((prev) =>
-                prev.map((session) =>
-                  session.id === sessionId
-                    ? { ...session, messages: [...session.messages, rateLimitMessage] }
-                    : session,
-                ),
-              )
-
-              await new Promise((resolve) => setTimeout(resolve, delay))
-              return makeAPICall(retryCount + 1)
-            } else {
-              throw new Error("Rate limit exceeded. Please try again later.")
-            }
+          if (typeof response === 'string') {
+            return response
+          } else if (response?.message?.content) {
+            return response.message.content
+          } else if (response?.text) {
+            return response.text
+          } else {
+            throw new Error("Unexpected response format from Puter.js")
           }
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
-          }
-
-          return await response.json()
-        } catch (error) {
-          if (retryCount < maxRetries && (error instanceof TypeError || error.message.includes("fetch"))) {
+        } catch (error: any) {
+          console.error("Error calling Puter.js AI:", error)
+          if (retryCount < maxRetries) {
             const delay = baseDelay * Math.pow(2, retryCount)
-            console.log(`Network error. Retrying in ${delay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+            console.log(`Error occurred. Retrying in ${delay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+            
+            const retryMessage: Message = {
+              id: (Date.now() + Math.random()).toString(),
+              role: "assistant",
+              content: `Retrying in ${delay / 1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`,
+              timestamp: new Date(),
+            }
+
+            setSessions((prev) =>
+              prev.map((session) =>
+                session.id === sessionId
+                  ? { ...session, messages: [...session.messages, retryMessage] }
+                  : session,
+              ),
+            )
+
             await new Promise((resolve) => setTimeout(resolve, delay))
-            return makeAPICall(retryCount + 1)
+            return makePuterAPICall(retryCount + 1)
           }
           throw error
         }
@@ -614,20 +542,12 @@ The system will first create all files from your structure, then populate them w
 
       try {
         setIsLoading(true)
-        const data = await makeAPICall()
+        const assistantContent = await makePuterAPICall()
 
-        if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-          console.error("Invalid API response structure:", data)
+        if (!assistantContent || typeof assistantContent !== "string") {
+          console.error("Invalid API response:", assistantContent)
           throw new Error("Invalid response from AI service")
         }
-
-        const choice = data.choices[0]
-        if (!choice || !choice.message || typeof choice.message.content !== "string") {
-          console.error("Invalid message structure:", choice)
-          throw new Error("Invalid message format from AI service")
-        }
-
-        const assistantContent = choice.message.content
 
         const fileStructure = parseFileStructure(assistantContent)
         if (fileStructure.length > 0) {
@@ -1177,7 +1097,7 @@ setTimeout(() => {
         </div>
       </motion.div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 smooth-scroll min-h-0">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 smooth-scroll min-h-0 hide-scrollbar">
         <AnimatePresence>
           {currentSessionData?.messages.map((message, index) => (
             <motion.div
@@ -1190,7 +1110,7 @@ setTimeout(() => {
             >
               <motion.div
                 whileHover={{ scale: 1.02 }}
-                className={`max-w-[80%] p-4 rounded-xl transition-all-smooth ${
+                className={`max-w-[90%] md:max-w-[80%] p-3 md:p-4 rounded-xl transition-all-smooth ${
                   message.role === "user"
                     ? "bg-gradient-to-br from-white to-gray-100 text-black glow-white"
                     : "bg-gradient-to-br from-gray-800 to-gray-700 text-white border border-gray-600"
@@ -1240,7 +1160,7 @@ setTimeout(() => {
       </div>
 
       <motion.div
-        className="p-4 border-t border-gray-800 bg-gradient-to-r from-gray-900/50 to-gray-800/50 backdrop-blur-sm flex-shrink-0"
+        className="p-3 md:p-4 border-t border-gray-800 bg-gradient-to-r from-gray-900/50 to-gray-800/50 backdrop-blur-sm flex-shrink-0 safe-area-bottom"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6 }}

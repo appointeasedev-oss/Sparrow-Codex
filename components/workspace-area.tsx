@@ -443,33 +443,33 @@ document.addEventListener('DOMContentLoaded', function() {
   return (
     <div className="h-full flex flex-col">
       <motion.div
-        className="border-b border-gray-800 p-4 backdrop-blur-sm bg-black/50 flex-shrink-0"
+        className="border-b border-gray-800 p-2 md:p-4 backdrop-blur-sm bg-black/50 flex-shrink-0"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-900/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-900/80 backdrop-blur-sm h-auto">
             <TabsTrigger
               value="preview"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border"
+              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
             >
-              <Eye className="w-4 h-4 mr-2" />
-              Preview
+              <Eye className="w-4 h-4 md:mr-1" />
+              <span className="hidden sm:inline">Preview</span>
             </TabsTrigger>
             <TabsTrigger
               value="code"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border"
+              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
             >
-              <Code className="w-4 h-4 mr-2" />
-              Code{" "}
+              <Code className="w-4 h-4 md:mr-1" />
+              <span className="hidden sm:inline">Code</span>
               <AnimatePresence>
                 {files.length > 0 && (
                   <motion.span
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
-                    className="ml-1 bg-white text-black rounded-full px-2 py-0.5 text-xs pulse-glow"
+                    className="ml-0 md:ml-1 bg-white text-black rounded-full px-1.5 md:px-2 py-0.5 text-xs pulse-glow"
                   >
                     {files.length}
                   </motion.span>
@@ -478,23 +478,23 @@ document.addEventListener('DOMContentLoaded', function() {
             </TabsTrigger>
             <TabsTrigger
               value="status"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border"
+              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
             >
-              <Activity className="w-4 h-4 mr-2" />
-              Status
+              <Activity className="w-4 h-4 md:mr-1" />
+              <span className="hidden sm:inline">Status</span>
             </TabsTrigger>
             <TabsTrigger
               value="project"
-              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border"
+              className="data-[state=active]:bg-white data-[state=active]:text-black transition-all-smooth hover-lift relative overflow-hidden animated-border flex flex-col md:flex-row items-center gap-1 py-2 px-1 md:px-3 text-xs md:text-sm"
             >
-              <Settings className="w-4 h-4 mr-2" />
-              Project
+              <Settings className="w-4 h-4 md:mr-1" />
+              <span className="hidden sm:inline">Project</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </motion.div>
 
-      <div className="flex-1 p-4 min-h-0">
+      <div className="flex-1 p-2 md:p-4 min-h-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <AnimatePresence mode="wait">
             <TabsContent value="preview" className="h-full overflow-hidden">
@@ -523,7 +523,12 @@ document.addEventListener('DOMContentLoaded', function() {
                   files={files}
                   activeFileId={activeFileId}
                   onFileSelect={setActiveFileId}
-                  onFileUpdate={updateSpecificFile}
+                  onFileUpdate={(fileId, content) => {
+                    const file = currentProject?.files.find(f => f.id === fileId)
+                    if (file) {
+                      updateSpecificFile(file.name, content, file.language)
+                    }
+                  }}
                   onFileDelete={deleteFile}
                   onFileRename={renameFile}
                 />

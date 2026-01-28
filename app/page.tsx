@@ -1,39 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import dynamic from "next/dynamic"
-
-const LoadingScreen = dynamic(
-  () => import("@/components/loading-screen").then((mod) => ({ default: mod.LoadingScreen })),
-  { ssr: false },
-)
-const MainInterface = dynamic(
-  () => import("@/components/main-interface").then((mod) => ({ default: mod.MainInterface })),
-  { ssr: false },
-)
-const ApiKeySetup = dynamic(() => import("@/components/api-key-setup").then((mod) => ({ default: mod.ApiKeySetup })), {
-  ssr: false,
-})
-const TermsAndConditions = dynamic(
-  () => import("@/components/terms-and-conditions").then((mod) => ({ default: mod.TermsAndConditions })),
-  { ssr: false },
-)
+import { LoadingScreen } from "@/components/loading-screen"
+import { MainInterface } from "@/components/main-interface"
+import { TermsAndConditions } from "@/components/terms-and-conditions"
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [showTerms, setShowTerms] = useState(false)
-  const [showApiKeySetup, setShowApiKeySetup] = useState(false)
-  const [showMainApp, setShowMainApp] = useState(false)
+  const [appState, setAppState] = useState<"loading" | "terms" | "main">("loading")
   const [isMounted, setIsMounted] = useState(false)
 
   const handleTermsAccepted = () => {
-    setShowTerms(false)
-    setShowApiKeySetup(true)
-  }
-
-  const handleApiKeySubmitted = () => {
-    setShowApiKeySetup(false)
-    setShowMainApp(true)
+    localStorage.setItem("sparrow_terms_accepted", "true")
+    setAppState("main")
   }
 
   useEffect(() => {
@@ -62,18 +40,12 @@ export default function Home() {
     }
 
     const timer = setTimeout(() => {
-      setIsLoading(false)
-
       try {
-        const savedApiKey = localStorage.getItem("sparrow_openrouter_key")
-        if (savedApiKey) {
-          setShowMainApp(true)
-        } else {
-          setShowTerms(true)
-        }
+        const termsAccepted = localStorage.getItem("sparrow_terms_accepted")
+        setAppState(termsAccepted ? "main" : "terms")
       } catch (err) {
         console.error("Error accessing localStorage:", err)
-        setShowTerms(true)
+        setAppState("terms")
       }
     }, 2000)
 
@@ -84,16 +56,12 @@ export default function Home() {
     return <div style={{ height: "100vh", backgroundColor: "#000" }} />
   }
 
-  if (isLoading) {
+  if (appState === "loading") {
     return <LoadingScreen />
   }
 
-  if (showTerms) {
+  if (appState === "terms") {
     return <TermsAndConditions onAccept={handleTermsAccepted} />
-  }
-
-  if (showApiKeySetup) {
-    return <ApiKeySetup onSubmit={handleApiKeySubmitted} />
   }
 
   return <MainInterface />

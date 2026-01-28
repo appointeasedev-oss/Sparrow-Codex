@@ -1,9 +1,16 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useState, useEffect } from "react"
 import { SparrowLogo } from "./sparrow-logo"
 
 export function LoadingScreen() {
+  const [dimensions, setDimensions] = useState({ width: 1000, height: 800 })
+  
+  useEffect(() => {
+    setDimensions({ width: window.innerWidth, height: window.innerHeight })
+  }, [])
+
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
@@ -12,12 +19,12 @@ export function LoadingScreen() {
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full opacity-20"
             initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
+              x: Math.random() * dimensions.width,
+              y: Math.random() * dimensions.height,
             }}
             animate={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
+              x: Math.random() * dimensions.width,
+              y: Math.random() * dimensions.height,
             }}
             transition={{
               duration: Math.random() * 10 + 10,
